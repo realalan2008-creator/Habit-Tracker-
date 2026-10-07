@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Habit Tracker preview</title>
+<style>
+:root{--paper:#EEF2F6;--card:#fff;--ink:#14213D;--slate:#5B6B7C;--line:#D5DEE7;--sea:#2A6F97;--bg:#dfe6ed;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1220}}
+:root[data-theme="dark"]{--bg:#0b1220}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink)}
+.app{max-width:430px;min-height:100vh;margin:0 auto;background:var(--paper);position:relative;padding-bottom:110px}
+.hd{padding:20px 20px 8px}
+.date{font-size:15px;color:var(--slate);font-weight:500}
+h1{margin:4px 0 0;font-size:30px;font-weight:800;letter-spacing:-.5px}
+.track{height:8px;border-radius:4px;background:var(--line);margin-top:14px;overflow:hidden}
+.fill{height:8px;background:var(--sea);border-radius:4px;transition:width .25s}
+.list{padding:12px 20px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+.top{display:flex;align-items:center}
+.nm{flex:1;padding-right:12px}
+.nm b{font-size:19px;font-weight:700;display:block}
+.nm span{font-size:14px;color:var(--slate);display:block;margin-top:4px}
+.big{width:56px;height:56px;border-radius:50%;border:3px solid;background:none;font-size:28px;font-weight:800;cursor:pointer;color:#fff;transition:transform .1s}
+.big:active{transform:scale(.94)}
+.week{display:flex;justify-content:space-between;margin-top:18px}
+.d{width:36px;text-align:center;cursor:pointer;background:none;border:0;padding:0;font:inherit}
+.d i{display:block;font-style:normal;font-size:12px;color:var(--slate);margin-bottom:6px}
+.d i.t{color:var(--ink);font-weight:700}
+.d u{display:block;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);margin:0 auto}
+.hint{text-align:center;color:var(--slate);font-size:13px;margin:6px 0}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;border:0;border-radius:30px;padding:16px 32px;font-size:17px;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.2);cursor:pointer}
+.ov{position:fixed;inset:0;background:rgba(20,33,61,.35);display:none;align-items:flex-end;justify-content:center}
+.ov.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:430px;border-radius:24px 24px 0 0;padding:22px 22px calc(22px + env(safe-area-inset-bottom,0px))}
+.sheet h2{margin:0 0 14px;font-size:22px;font-weight:800}
+.sheet input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:17px;color:var(--ink);background:#fff}
+.sheet p{font-size:14px;color:var(--slate);font-weight:600;margin:18px 0 10px}
+.sw{display:flex;gap:12px}
+.sw button{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.sw button.on{border-color:var(--ink)}
+.btns{display:flex;gap:12px;margin-top:24px}
+.btns button{padding:14px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer}
+.g{flex:1;background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.p{flex:2;background:var(--sea);border:0;color:#fff}
+.p:disabled{opacity:.4}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hd"><div class="date" id="date"></div><h1 id="title"></h1><div class="track"><div class="fill" id="fill"></div></div></div>
+  <div class="list" id="list"></div>
+  <div class="hint">Tap a circle to mark a day. Long press a habit to delete it.</div>
+  <button class="fab" id="add">Add habit</button>
+</div>
+<div class="ov" id="ov">
+  <div class="sheet">
+    <h2>New habit</h2>
+    <input id="inp" placeholder="e.g. Read 10 pages" maxlength="60">
+    <p>Color</p><div class="sw" id="sw"></div>
+    <div class="btns"><button class="g" id="cancel">Cancel</button><button class="p" id="save" disabled>Save habit</button></div>
+  </div>
+</div>
+<script>
+var COLORS=['#2A6F97','#E07A5F','#3D9970','#F4B63F','#8E5BD0','#D1495B'];
+var WD=['S','M','T','W','T','F','S'];
+function ago(n){var d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-n);return d}
+function key(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function mk(name,color,offs){var o={};offs.forEach(function(n){o[key(ago(n))]=1});return{id:Math.random(),name:name,color:color,done:o}}
+var habits=[mk('Drink 2L of water','#2A6F97',[0,1,2,3,5]),mk('Ten-minute walk','#3D9970',[1,2,3,4]),mk('Read 10 pages','#E07A5F',[2,3]),mk('Stretch','#8E5BD0',[])];
+var color=COLORS[0];
+function streak(h){var n=0,o=h.done[key(ago(0))]?0:1;while(h.done[key(ago(o))]){n++;o++}return n}
+function render(){
+  var t=key(ago(0)),c=habits.filter(function(h){return h.done[t]}).length;
+  document.getElementById('date').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('title').textContent=!habits.length?'Start a habit':c===habits.length?'All done today':c+' of '+habits.length+' done today';
+  document.getElementById('fill').style.width=(habits.length?c/habits.length*100:0)+'%';
+  var l=document.getElementById('list');l.innerHTML='';
+  habits.forEach(function(h){
+    var s=streak(h),on=h.done[t],card=document.createElement('div');card.className='card';
+    var top=document.createElement('div');top.className='top';
+    top.innerHTML='<div class="nm"><b></b><span>'+(s?s+' day'+(s>1?'s':'')+' in a row':'No streak yet')+'</span></div>';
+    top.querySelector('b').textContent=h.name;
+    var b=document.createElement('button');b.className='big';b.style.borderColor=h.color;b.style.background=on?h.color:'transparent';b.style.color=on?'#fff':h.color;b.textContent=on?'✓':'';
+    b.onclick=function(){tog(h,t)};top.appendChild(b);card.appendChild(top);
+    var w=document.createElement('div');w.className='week';
+    for(var i=6;i>=0;i--){(function(d){var k=key(d),x=document.createElement('button');x.className='d';
+      x.innerHTML='<i class="'+(k===t?'t':'')+'">'+WD[d.getDay()]+'</i><u></u>';
+      var u=x.querySelector('u');if(h.done[k]){u.style.background=h.color;u.style.borderColor=h.color}
+      x.onclick=function(){tog(h,k)};w.appendChild(x)})(ago(i))}
+    card.appendChild(w);
+    var tm;card.addEventListener('pointerdown',function(){tm=setTimeout(function(){if(confirm('Delete "'+h.name+'"?')){habits=habits.filter(function(z){return z!==h});render()}},600)});
+    ['pointerup','pointerleave','pointermove'].forEach(function(e){card.addEventListener(e,function(){clearTimeout(tm)})});
+    l.appendChild(card)});
+}
+function tog(h,k){if(h.done[k])delete h.done[k];else h.done[k]=1;render()}
+var ov=document.getElementById('ov'),inp=document.getElementById('inp'),save=document.getElementById('save'),sw=document.getElementById('sw');
+function swatches(){sw.innerHTML='';COLORS.forEach(function(c){var b=document.createElement('button');b.style.background=c;if(c===color)b.className='on';b.onclick=function(){color=c;swatches()};sw.appendChild(b)})}
+document.getElementById('add').onclick=function(){ov.classList.add('on');swatches();setTimeout(function(){inp.focus()},100)};
+document.getElementById('cancel').onclick=function(){ov.classList.remove('on')};
+ov.addEventListener('click',function(e){if(e.target===ov)ov.classList.remove('on')});
+inp.oninput=function(){save.disabled=!inp.value.trim()};
+function addH(){var v=inp.value.trim();if(!v)return;habits.push({id:Math.random(),name:v,color:color,done:{}});inp.value='';save.disabled=true;color=COLORS[0];ov.classList.remove('on');render()}
+save.onclick=addH;inp.onkeydown=function(e){if(e.key==='Enter')addH()};
+render();
+</script>
+</body>
+</html>
